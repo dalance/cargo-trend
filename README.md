@@ -34,7 +34,7 @@ The extension can be ".svg", ".png", ".bmp", ".jpeg", ".jpg".
 $ cargo trend --output trend.png
 ```
 
-## Sample
+## Samples
 
 ### Error management library
 
@@ -60,3 +60,8 @@ $ cargo trend ansi_term termcolor term termion colored console
 
 ![term.svg](./samples/term.svg)
 
+## Database
+
+The database of dependent crates is `./db/db.gz`.
+cargo-trend fetch it from github.com and generate graph.
+The database is constructed from [crates.io-index](https://github.com/rust-lang/crates.io-index) and updated daily.
