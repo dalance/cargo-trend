@@ -10,6 +10,13 @@ readme = "README.md"
 description = ""
 edition = "2018"
 
+[package.metadata.release]
+dev-version-ext            = "pre"
+pre-release-commit-message = "Prepare to v{{version}}"
+pro-release-commit-message = "Start next development iteration v{{version}}"
+tag-message                = "Bump version to {{version}}"
+tag-prefix                 = ""
+
 [dependencies]
 cargo_metadata = "0.8"
 chrono         = {version = "0.4", features = ["serde"]}

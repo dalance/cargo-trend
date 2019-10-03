@@ -1,5 +1,8 @@
 # cargo-trend
 
+[![Actions Status](https://github.com/dalance/cargo-trend/workflows/Test/badge.svg)](https://github.com/dalance/cargo-trend/actions)
+[![Crates.io](https://img.shields.io/crates/v/cargo-trend.svg)](https://crates.io/crates/cargo-trend)
+
 cargo-trend is a cargo subcommand to generate trend graph of dependent crates.
 
 ## Installation
