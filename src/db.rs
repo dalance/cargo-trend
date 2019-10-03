@@ -6,6 +6,7 @@ use flate2::read::GzDecoder;
 use flate2::{Compression, GzBuilder};
 use git2::{BranchType, Repository, ResetType};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -37,17 +38,28 @@ impl Db {
         let file = File::open(path)?;
         let mut gz = GzDecoder::new(file);
         let mut buf = Vec::new();
-        let _ = gz.read_to_end(&mut buf);
+        gz.read_to_end(&mut buf)?;
         let db = serde_json::from_str(&String::from_utf8(buf)?)?;
         Ok(db)
     }
 
     pub fn save<T: AsRef<Path>>(&self, path: T) -> Result<(), Error> {
         let encoded: Vec<u8> = serde_json::to_string(self)?.into_bytes();
-        let file = File::create(path)?;
+        let file = File::create(&path)?;
         let mut gz = GzBuilder::new().write(file, Compression::default());
         gz.write_all(&encoded)?;
         gz.finish()?;
+
+        let mut file = File::open(&path)?;
+        let mut buf = Vec::new();
+        file.read_to_end(&mut buf)?;
+
+        let hash = Sha256::digest(&buf);
+        let path = path.as_ref().with_extension("gz.sha256");
+        let mut file = File::create(path)?;
+        file.write_all(&format!("{:x}", hash).as_bytes())?;
+        file.flush()?;
+
         Ok(())
     }
 

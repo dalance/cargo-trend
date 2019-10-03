@@ -20,7 +20,12 @@ impl Plotter {
         self
     }
 
-    pub fn plot<T: AsRef<Path>>(&self, path: T, targets: &[&str], db: &Db) -> Result<(), Error> {
+    pub fn plot<T: AsRef<Path>, U: AsRef<str>>(
+        &self,
+        path: T,
+        targets: &[U],
+        db: &Db,
+    ) -> Result<(), Error> {
         let extension = path.as_ref().extension();
         match extension {
             Some(x) if x == OsStr::new("svg") => {
@@ -34,10 +39,10 @@ impl Plotter {
         }
     }
 
-    pub fn plot_with_backend<T: DrawingBackend>(
+    pub fn plot_with_backend<T: DrawingBackend, U: AsRef<str>>(
         &self,
         backend: T,
-        targets: &[&str],
+        targets: &[U],
         db: &Db,
     ) -> Result<(), Error> {
         let mut x_min = Utc.timestamp(std::i32::MAX as i64, 0).date();
@@ -48,7 +53,7 @@ impl Plotter {
         let mut plots = BTreeMap::new();
         for target in targets {
             let mut plot = Vec::new();
-            if let Some(entries) = db.map.get(*target) {
+            if let Some(entries) = db.map.get(target.as_ref()) {
                 for entry in entries {
                     let date = entry.time.date();
                     let dependents = entry.dependents as f32;
@@ -60,7 +65,7 @@ impl Plotter {
                     y_max = f32::max(y_max, dependents);
                 }
             }
-            plots.insert(target, plot);
+            plots.insert(String::from(target.as_ref()), plot);
         }
 
         let root = backend.into_drawing_area();
@@ -95,7 +100,7 @@ impl Plotter {
             let anno = chart
                 .draw_series(LineSeries::new(plot.clone(), style.clone()))
                 .unwrap();
-            anno.label(**target).legend(move |(x, y)| {
+            anno.label(target).legend(move |(x, y)| {
                 plotters::prelude::Path::new(vec![(x, y), (x + 20, y)], style.clone())
             });
         }
