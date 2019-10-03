@@ -28,7 +28,7 @@ $ cargo trend failure error-chain quick-error snafu err-derive
 ```
 
 `--output` option can specify the filename of the trend graph.
-The extension can be ".svg", ".png", ".bmp", ".jpeg", ".jpg".
+The extension can be `.svg`, `.png`, `.bmp`, `.jpeg` and `.jpg`.
 
 ```console
 $ cargo trend --output trend.png
