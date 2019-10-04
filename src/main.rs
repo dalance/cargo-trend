@@ -17,37 +17,40 @@ use xdg::BaseDirectories;
 // ---------------------------------------------------------------------------------------------------------------------
 
 #[derive(Debug, StructOpt)]
-#[structopt(long_version(option_env!("LONG_VERSION").unwrap_or(env!("CARGO_PKG_VERSION"))))]
-#[structopt(setting(clap::AppSettings::ColoredHelp))]
-#[structopt(setting(clap::AppSettings::DeriveDisplayOrder))]
-pub struct Opt {
-    /// Crates
-    pub crates: Vec<String>,
+#[structopt(bin_name("cargo"))]
+pub enum Opt {
+    #[structopt(long_version(option_env!("LONG_VERSION").unwrap_or(env!("CARGO_PKG_VERSION"))))]
+    #[structopt(setting(clap::AppSettings::ColoredHelp))]
+    #[structopt(setting(clap::AppSettings::DeriveDisplayOrder))]
+    Trend {
+        /// Crates
+        crates: Vec<String>,
 
-    /// X size of output image
-    #[structopt(value_name = "UINT", long = "xsize", default_value = "1200")]
-    pub x_size: u32,
+        /// X size of output image
+        #[structopt(value_name = "UINT", long = "xsize", default_value = "1200")]
+        x_size: u32,
 
-    /// Y size of output image
-    #[structopt(value_name = "UINT", long = "ysize", default_value = "800")]
-    pub y_size: u32,
+        /// Y size of output image
+        #[structopt(value_name = "UINT", long = "ysize", default_value = "800")]
+        y_size: u32,
 
-    /// File path of output image
-    #[structopt(
-        value_name = "PATH",
-        short = "o",
-        long = "output",
-        default_value = "trend.svg"
-    )]
-    pub output: PathBuf,
+        /// File path of output image
+        #[structopt(
+            value_name = "PATH",
+            short = "o",
+            long = "output",
+            default_value = "trend.svg"
+        )]
+        output: PathBuf,
 
-    /// File path of Cargo.toml
-    #[structopt(value_name = "PATH", long = "manifest-path")]
-    pub manifest_path: Option<PathBuf>,
+        /// File path of Cargo.toml
+        #[structopt(value_name = "PATH", long = "manifest-path")]
+        manifest_path: Option<PathBuf>,
 
-    /// Update db
-    #[structopt(value_name = "PATH", short = "u", long = "update")]
-    pub update: Option<PathBuf>,
+        /// Update db
+        #[structopt(value_name = "PATH", short = "u", long = "update")]
+        update: Option<PathBuf>,
+    },
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -72,7 +75,18 @@ fn main() {
 fn run() -> Result<(), Error> {
     let opt = Opt::from_args();
 
-    if let Some(path) = opt.update {
+    let (crates, x_size, y_size, output, manifest_path, update) = match opt {
+        Opt::Trend {
+            crates,
+            x_size,
+            y_size,
+            output,
+            manifest_path,
+            update,
+        } => (crates, x_size, y_size, output, manifest_path, update),
+    };
+
+    if let Some(path) = update {
         let mut db = if path.exists() {
             Db::load(&path)?
         } else {
@@ -111,9 +125,9 @@ fn run() -> Result<(), Error> {
 
     let db = Db::load(&db_path)?;
 
-    let targets = if opt.crates.len() == 0 {
+    let targets = if crates.len() == 0 {
         let mut cmd = MetadataCommand::new();
-        if let Some(path) = opt.manifest_path {
+        if let Some(path) = manifest_path {
             cmd.manifest_path(path);
         }
         let metadata = cmd.exec()?;
@@ -132,11 +146,11 @@ fn run() -> Result<(), Error> {
         }
         ret
     } else {
-        opt.crates
+        crates
     };
 
-    let plotter = Plotter::new().size((opt.x_size, opt.y_size));
-    plotter.plot(opt.output, targets.as_slice(), &db)?;
+    let plotter = Plotter::new().size((x_size, y_size));
+    plotter.plot(output, targets.as_slice(), &db)?;
 
     Ok(())
 }
