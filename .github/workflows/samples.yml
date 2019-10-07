@@ -1,0 +1,30 @@
+name: Update samples
+
+on:
+  schedule:
+  - cron: 0 0 * * SUN
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Run
+      run: |
+        cargo run -- trend --output samples/error.svg failure error-chain quick-error snafu err-derive
+        cargo run -- trend --output samples/arg.svg clap structopt docopt argparse getopts
+        cargo run -- trend --output samples/term.svg ansi_term termcolor term termion colored console
+
+    - name: Commit
+      uses: EndBug/add-and-commit@v2.1.0
+      with:
+        author_name: dalance
+        author_email: dalance@gmail.com
+        message: "Update samples"
+        path: "./samples"
+        pattern: "*.svg"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
