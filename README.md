@@ -24,7 +24,7 @@ $ cargo trend
 If crate names are given, `trend.svg` show the trend graph of the given crates.
 
 ```console
-$ cargo trend failure error-chain quick-error snafu err-derive
+$ cargo trend failure error-chain quick-error snafu err-derive anyhow thiserror
 ```
 
 `--output` option can specify the filename of the trend graph.

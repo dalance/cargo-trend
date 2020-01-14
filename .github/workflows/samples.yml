@@ -13,7 +13,7 @@ jobs:
     - uses: actions/checkout@v1
     - name: Run
       run: |
-        cargo run -- trend --output samples/error.svg failure error-chain quick-error snafu err-derive
+        cargo run -- trend --output samples/error.svg failure error-chain quick-error snafu err-derive anyhow thiserror
         cargo run -- trend --output samples/arg.svg clap structopt docopt argparse getopts
         cargo run -- trend --output samples/term.svg ansi_term termcolor term termion colored console
 
