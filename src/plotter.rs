@@ -39,12 +39,12 @@ impl Plotter {
         }
     }
 
-    pub fn plot_with_backend<T: DrawingBackend, U: AsRef<str>>(
-        &self,
-        backend: T,
-        targets: &[U],
-        db: &Db,
-    ) -> Result<(), Error> {
+    pub fn plot_with_backend<T, U>(&self, backend: T, targets: &[U], db: &Db) -> Result<(), Error>
+    where
+        T: DrawingBackend,
+        T::ErrorType: 'static,
+        U: AsRef<str>,
+    {
         let mut x_min = Utc.timestamp(std::i32::MAX as i64, 0).date();
         let mut x_max = Utc.timestamp(0, 0).date();
         let mut y_min = std::f32::MAX;
@@ -74,16 +74,14 @@ impl Plotter {
         let mut chart = ChartBuilder::on(&root)
             .x_label_area_size(50)
             .y_label_area_size(50)
-            .build_ranged(x_min..x_max, y_min..y_max)
-            .unwrap();
+            .build_ranged(x_min..x_max, y_min..y_max)?;
 
         chart
             .configure_mesh()
             .disable_x_mesh()
             .y_label_formatter(&|x| format!("{:.0}", x))
             .y_desc("Number of dependent crates")
-            .draw()
-            .unwrap();
+            .draw()?;
 
         let hue_step = 1.0 / plots.len() as f64;
         let mut hue = 0.0;
@@ -97,11 +95,9 @@ impl Plotter {
                 stroke_width: 2,
             };
 
-            let anno = chart
-                .draw_series(LineSeries::new(plot.clone(), style.clone()))
-                .unwrap();
+            let anno = chart.draw_series(LineSeries::new(plot.clone(), style.clone()))?;
             anno.label(target).legend(move |(x, y)| {
-                plotters::prelude::Path::new(vec![(x, y), (x + 20, y)], style.clone())
+                plotters::prelude::PathElement::new(vec![(x, y), (x + 20, y)], style.clone())
             });
         }
 
