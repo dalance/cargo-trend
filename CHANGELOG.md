@@ -2,6 +2,7 @@
 
 ## [Unreleased](https://github.com/dalance/cargo-trend/compare/v0.1.1...Unreleased) - ReleaseDate
 
+* [Changed] DB version to v2
 * [Added] transitive option
 * [Added] relative option
 * [Fixed] remove unwrap

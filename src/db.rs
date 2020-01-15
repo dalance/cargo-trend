@@ -95,7 +95,7 @@ impl Db {
 
         let total = revs.len();
         for (i, (time, id)) in revs.iter().enumerate() {
-            println!("Update DB: {} {} ( {} / {} )", time, id, i, total);
+            println!("Update DB: {} {} ( {} / {} )", time, id, i + 1, total);
             let obj = repo.find_object(id.clone(), None)?;
             repo.reset(&obj, ResetType::Hard, None)?;
 

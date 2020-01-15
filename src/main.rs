@@ -129,7 +129,7 @@ fn run() -> Result<(), Error> {
     let db_path = xdg_dirs.place_data_file("db.gz")?;
 
     let latest_hash =
-        reqwest::get("https://github.com/dalance/cargo-trend/raw/master/db/db.gz.sha256")?
+        reqwest::get("https://github.com/dalance/cargo-trend/raw/master/db_v2/db.gz.sha256")?
             .text()?;
 
     let current_hash = if db_path.exists() {
@@ -142,7 +142,8 @@ fn run() -> Result<(), Error> {
     };
 
     if latest_hash != current_hash {
-        let mut res = reqwest::get("https://github.com/dalance/cargo-trend/raw/master/db/db.gz")?;
+        let mut res =
+            reqwest::get("https://github.com/dalance/cargo-trend/raw/master/db_v2/db.gz")?;
         let mut buf = Vec::new();
         res.read_to_end(&mut buf)?;
         let mut file = File::create(&db_path)?;

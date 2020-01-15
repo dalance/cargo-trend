@@ -34,6 +34,9 @@ The extension can be `.svg`, `.png`, `.bmp`, `.jpeg` and `.jpg`.
 $ cargo trend --output trend.png
 ```
 
+If `--relative` option is given, the y-axis of the output becomes fraction of crates.io.
+If `--transitive` option is given, the way counting dependents changes from direct-dependencies to transitive-dependencies.
+
 ## Samples
 
 ### Error management library
