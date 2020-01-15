@@ -9,7 +9,7 @@ license = "MIT"
 readme = "README.md"
 description = "Cargo subcommand to generate trend graph of dependent crates"
 edition = "2018"
-exclude = ["db/*", "samples/*"]
+exclude = ["db/*", "db_v2/*", "samples/*"]
 
 [package.metadata.release]
 dev-version-ext             = "pre"
