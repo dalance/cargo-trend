@@ -1,6 +1,8 @@
 # Change Log
 
-## [Unreleased](https://github.com/dalance/cargo-trend/compare/v0.1.1...Unreleased) - ReleaseDate
+## [Unreleased](https://github.com/dalance/cargo-trend/compare/v0.2.0...Unreleased) - ReleaseDate
+
+## [v0.2.0](https://github.com/dalance/cargo-trend/compare/v0.1.1...v0.2.0) - 2020-01-15
 
 * [Changed] DB version to v2
 * [Added] transitive option
