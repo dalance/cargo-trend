@@ -14,8 +14,11 @@ jobs:
     - name: Run
       run: |
         cargo run -- trend --output samples/error.svg failure error-chain quick-error snafu err-derive anyhow thiserror
+        cargo run -- trend --relative --output samples/error_relative.svg failure error-chain quick-error snafu err-derive anyhow thiserror
         cargo run -- trend --output samples/arg.svg clap structopt docopt argparse getopts
+        cargo run -- trend --relative --output samples/arg_relative.svg clap structopt docopt argparse getopts
         cargo run -- trend --output samples/term.svg ansi_term termcolor term termion colored console
+        cargo run -- trend --relative --output samples/term_relative.svg ansi_term termcolor term termion colored console
 
     - name: Commit
       uses: EndBug/add-and-commit@v2.1.0
