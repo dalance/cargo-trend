@@ -46,6 +46,7 @@ $ cargo trend failure error-chain quick-error snafu err-derive anyhow thiserror
 ```
 
 ![error.svg](./samples/error.svg)
+![error_relative.svg](./samples/error_relative.svg)
 
 ### Argument parser library
 
@@ -54,6 +55,7 @@ $ cargo trend clap structopt docopt argparse getopts
 ```
 
 ![arg.svg](./samples/arg.svg)
+![arg_relative.svg](./samples/arg_relative.svg)
 
 ### Terminal library
 
@@ -62,6 +64,7 @@ $ cargo trend ansi_term termcolor term termion colored console
 ```
 
 ![term.svg](./samples/term.svg)
+![term_relative.svg](./samples/term_relative.svg)
 
 ## Database
 
