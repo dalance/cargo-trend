@@ -7,7 +7,7 @@ cargo-trend is a cargo subcommand to generate trend graph of dependent crates.
 
 ## Installation
 
-You can install by [cargo](https://crates.io/crates/procs).
+You can install by [cargo](https://crates.io/crates/cargo-trend).
 
 ```
 cargo install cargo-trend
@@ -39,7 +39,7 @@ $ cargo trend --output trend.png
 ### Error management library
 
 ```console
-$ cargo trend failure error-chain quick-error snafu err-derive
+$ cargo trend failure error-chain quick-error snafu err-derive anyhow thiserror
 ```
 
 ![error.svg](./samples/error.svg)
