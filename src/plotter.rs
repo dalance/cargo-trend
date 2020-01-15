@@ -86,6 +86,9 @@ impl Plotter {
             plots.insert(String::from(target.as_ref()), plot);
         }
 
+        y_min *= 0.9;
+        y_max *= 1.1;
+
         let root = backend.into_drawing_area();
         let _ = root.fill(&WHITE);
         let root = root.margin(10, 10, 10, 10);
@@ -103,7 +106,7 @@ impl Plotter {
         chart
             .configure_mesh()
             .disable_x_mesh()
-            .y_label_formatter(&|x| format!("{:.0}", x))
+            .y_label_formatter(&|x| format!("{}", x))
             .y_desc(y_desc)
             .draw()?;
 
