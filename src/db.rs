@@ -1,13 +1,13 @@
+use anyhow::Error;
 use chrono::serde::ts_seconds;
 use chrono::{DateTime, TimeZone, Utc};
-use crates_index::Index;
-use failure::Error;
+use crates_index::{Crate, Index};
 use flate2::read::GzDecoder;
 use flate2::{Compression, GzBuilder};
 use git2::{BranchType, Repository, ResetType};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::Path;
@@ -23,7 +23,9 @@ pub struct Db {
 pub struct Entry {
     #[serde(with = "ts_seconds")]
     pub time: DateTime<Utc>,
-    pub dependents: u64,
+    pub direct_dependents: u64,
+    pub transitive_dependents: u64,
+    pub total_crates: u64,
 }
 
 impl Db {
@@ -70,7 +72,7 @@ impl Db {
         let repo = Repository::clone(url, &dir)?;
         repo.checkout_head(None)?;
         if let Some(branch) = branch {
-            let master = repo.find_branch(&branch, BranchType::Remote)?;
+            let master = repo.find_branch(&format!("origin/{}", branch), BranchType::Remote)?;
             let master = master.get().peel_to_commit()?;
             let master = repo.find_object(master.id(), None)?;
             repo.reset(&master, ResetType::Hard, None)?;
@@ -91,32 +93,55 @@ impl Db {
 
         revs.reverse();
 
-        for (time, id) in &revs {
-            dbg!((time, id));
+        let total = revs.len();
+        for (i, (time, id)) in revs.iter().enumerate() {
+            println!("Update DB: {} {} ( {} / {} )", time, id, i, total);
             let obj = repo.find_object(id.clone(), None)?;
             repo.reset(&obj, ResetType::Hard, None)?;
 
             let index = Index::new(&dir.path());
-            let mut deps = HashMap::new();
+            let mut crates = HashMap::new();
             for c in index.crates() {
+                crates.insert(String::from(c.name()), c);
+            }
+
+            let mut deps = HashMap::new();
+            let mut cache = HashMap::new();
+            for (name, c) in &crates {
                 for dep in c.latest_version().dependencies() {
-                    let name = String::from(dep.name());
-                    if let Some(cnt) = deps.get_mut(&name) {
+                    let name = dep.name();
+                    if let Some((cnt, _)) = deps.get_mut(name) {
                         *cnt = *cnt + 1;
                     } else {
-                        deps.insert(name, 1);
+                        deps.insert(String::from(name), (1, 0));
+                    }
+                }
+
+                let trace = HashSet::new();
+                let transitive = gather_transitive(name, trace, &crates, &mut cache);
+
+                for name in &transitive {
+                    if let Some((_, cnt)) = deps.get_mut(name) {
+                        *cnt = *cnt + 1;
+                    } else {
+                        deps.insert(String::from(name), (0, 1));
                     }
                 }
             }
 
-            for (name, dependents) in &deps {
+            let total_crates = index.crates().count() as u64;
+            for (name, (direct, transitive)) in &deps {
                 let entry = Entry {
                     time: *time,
-                    dependents: *dependents,
+                    direct_dependents: *direct,
+                    transitive_dependents: *transitive,
+                    total_crates,
                 };
                 if let Some(entries) = self.map.get_mut(name) {
                     let last = &entries[entries.len() - 1];
-                    if last.dependents != *dependents {
+                    if last.direct_dependents != *direct
+                        || last.transitive_dependents != *transitive
+                    {
                         (*entries).push(entry);
                     }
                 } else {
@@ -128,5 +153,33 @@ impl Db {
         }
 
         Ok(())
+    }
+}
+
+fn gather_transitive(
+    name: &str,
+    trace: HashSet<String>,
+    crates: &HashMap<String, Crate>,
+    cache: &mut HashMap<String, HashSet<String>>,
+) -> HashSet<String> {
+    if let Some(cached) = cache.get(name) {
+        cached.clone()
+    } else {
+        let mut ret = HashSet::new();
+        if let Some(c) = crates.get(name) {
+            for dep in c.latest_version().dependencies() {
+                let name = dep.name();
+                ret.insert(String::from(name));
+                if !trace.contains(name) {
+                    let mut trace = trace.clone();
+                    trace.insert(String::from(name));
+                    for c in gather_transitive(name, trace, crates, cache) {
+                        ret.insert(c.clone());
+                    }
+                }
+            }
+        }
+        cache.insert(String::from(name), ret.clone());
+        ret
     }
 }

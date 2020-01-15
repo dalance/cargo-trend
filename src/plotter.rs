@@ -1,6 +1,6 @@
 use crate::db::Db;
+use anyhow::Error;
 use chrono::{TimeZone, Utc};
-use failure::Error;
 use plotters::prelude::*;
 use std::collections::BTreeMap;
 use std::ffi::OsStr;
@@ -25,21 +25,30 @@ impl Plotter {
         path: T,
         targets: &[U],
         db: &Db,
+        relative: bool,
+        transitive: bool,
     ) -> Result<(), Error> {
         let extension = path.as_ref().extension();
         match extension {
             Some(x) if x == OsStr::new("svg") => {
                 let backend = SVGBackend::new(path.as_ref(), self.size);
-                self.plot_with_backend(backend, targets, db)
+                self.plot_with_backend(backend, targets, db, relative, transitive)
             }
             _ => {
                 let backend = BitMapBackend::new(path.as_ref(), self.size);
-                self.plot_with_backend(backend, targets, db)
+                self.plot_with_backend(backend, targets, db, relative, transitive)
             }
         }
     }
 
-    pub fn plot_with_backend<T, U>(&self, backend: T, targets: &[U], db: &Db) -> Result<(), Error>
+    pub fn plot_with_backend<T, U>(
+        &self,
+        backend: T,
+        targets: &[U],
+        db: &Db,
+        relative: bool,
+        transitive: bool,
+    ) -> Result<(), Error>
     where
         T: DrawingBackend,
         T::ErrorType: 'static,
@@ -55,14 +64,23 @@ impl Plotter {
             let mut plot = Vec::new();
             if let Some(entries) = db.map.get(target.as_ref()) {
                 for entry in entries {
-                    let date = entry.time.date();
-                    let dependents = entry.dependents as f32;
-                    plot.push((date, dependents));
+                    let x_val = entry.time.date();
+                    let dependents = if transitive {
+                        entry.transitive_dependents
+                    } else {
+                        entry.direct_dependents
+                    };
+                    let y_val = if relative {
+                        dependents as f32 / entry.total_crates as f32
+                    } else {
+                        dependents as f32
+                    };
+                    plot.push((x_val, y_val));
 
-                    x_min = if x_min > date { date } else { x_min };
-                    x_max = if x_max < date { date } else { x_max };
-                    y_min = f32::min(y_min, dependents);
-                    y_max = f32::max(y_max, dependents);
+                    x_min = if x_min > x_val { x_val } else { x_min };
+                    x_max = if x_max < x_val { x_val } else { x_max };
+                    y_min = f32::min(y_min, y_val);
+                    y_max = f32::max(y_max, y_val);
                 }
             }
             plots.insert(String::from(target.as_ref()), plot);
@@ -76,11 +94,17 @@ impl Plotter {
             .y_label_area_size(50)
             .build_ranged(x_min..x_max, y_min..y_max)?;
 
+        let y_desc = if relative {
+            "Fraction of dependent crates"
+        } else {
+            "Number of dependent crates"
+        };
+
         chart
             .configure_mesh()
             .disable_x_mesh()
             .y_label_formatter(&|x| format!("{:.0}", x))
-            .y_desc("Number of dependent crates")
+            .y_desc(y_desc)
             .draw()?;
 
         let hue_step = 1.0 / plots.len() as f64;
@@ -101,12 +125,13 @@ impl Plotter {
             });
         }
 
-        let _ = chart
+        chart
             .configure_series_labels()
             .background_style(&WHITE)
             .border_style(&BLACK)
-            .draw();
+            .draw()?;
 
+        chart.plotting_area().present()?;
         Ok(())
     }
 }

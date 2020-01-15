@@ -3,8 +3,8 @@ mod plotter;
 
 use crate::db::Db;
 use crate::plotter::Plotter;
+use anyhow::Error;
 use cargo_metadata::MetadataCommand;
-use failure::Error;
 use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::io::{Read, Write};
@@ -50,6 +50,18 @@ pub enum Opt {
         /// Update db
         #[structopt(value_name = "PATH", short = "u", long = "update")]
         update: Option<PathBuf>,
+
+        /// Branch of crates.io-index
+        #[structopt(value_name = "BRANCH", short = "b", long = "branch")]
+        branch: Option<String>,
+
+        /// Plot fraction of crates.io
+        #[structopt(short = "r", long = "relative")]
+        relative: bool,
+
+        /// Plot transitive dependents
+        #[structopt(short = "t", long = "transitive")]
+        transitive: bool,
     },
 }
 
@@ -63,8 +75,9 @@ pub enum Opt {
 
 fn main() {
     if let Err(e) = run() {
-        eprintln!("{}", e);
-        for e in e.as_fail().iter_causes() {
+        let mut iter = e.chain();
+        eprintln!("{}", iter.next().unwrap());
+        for e in iter {
             eprintln!("  Caused by: {}", e);
         }
 
@@ -75,16 +88,30 @@ fn main() {
 fn run() -> Result<(), Error> {
     let opt = Opt::from_args();
 
-    let (crates, x_size, y_size, output, manifest_path, update) = match opt {
-        Opt::Trend {
-            crates,
-            x_size,
-            y_size,
-            output,
-            manifest_path,
-            update,
-        } => (crates, x_size, y_size, output, manifest_path, update),
-    };
+    let (crates, x_size, y_size, output, manifest_path, update, branch, relative, transitive) =
+        match opt {
+            Opt::Trend {
+                crates,
+                x_size,
+                y_size,
+                output,
+                manifest_path,
+                update,
+                branch,
+                relative,
+                transitive,
+            } => (
+                crates,
+                x_size,
+                y_size,
+                output,
+                manifest_path,
+                update,
+                branch,
+                relative,
+                transitive,
+            ),
+        };
 
     if let Some(path) = update {
         let mut db = if path.exists() {
@@ -92,7 +119,7 @@ fn run() -> Result<(), Error> {
         } else {
             Db::new()
         };
-        db.update(None)?;
+        db.update(branch)?;
         db.save(&path)?;
 
         return Ok(());
@@ -150,7 +177,7 @@ fn run() -> Result<(), Error> {
     };
 
     let plotter = Plotter::new().size((x_size, y_size));
-    plotter.plot(output, targets.as_slice(), &db)?;
+    plotter.plot(output, targets.as_slice(), &db, relative, transitive)?;
 
     Ok(())
 }
