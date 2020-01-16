@@ -43,13 +43,19 @@ If `--top` option is given, the most trending crates are shown.
 ## Samples
 
 
-### The most trending crates
+### The most trending crates by 4 weeks
 
 ```console
-$ cargo trend --relative --top 5
+$ cargo trend --top 5 --duration 4
 ```
 
 ![top5.svg](./samples/top5.svg)
+
+```console
+$ cargo trend --relative --top 5 --duration 4
+```
+
+![top5_relative.svg](./samples/top5_relative.svg)
 
 ### Error management library
 

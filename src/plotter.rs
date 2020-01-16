@@ -1,6 +1,6 @@
 use crate::db::Db;
 use anyhow::Error;
-use chrono::{TimeZone, Utc};
+use chrono::{Date, TimeZone, Utc};
 use plotters::prelude::*;
 use std::collections::BTreeMap;
 use std::ffi::OsStr;
@@ -27,16 +27,17 @@ impl Plotter {
         db: &Db,
         relative: bool,
         transitive: bool,
+        start_date: Option<Date<Utc>>,
     ) -> Result<(), Error> {
         let extension = path.as_ref().extension();
         match extension {
             Some(x) if x == OsStr::new("svg") => {
                 let backend = SVGBackend::new(path.as_ref(), self.size);
-                self.plot_with_backend(backend, targets, db, relative, transitive)
+                self.plot_with_backend(backend, targets, db, relative, transitive, start_date)
             }
             _ => {
                 let backend = BitMapBackend::new(path.as_ref(), self.size);
-                self.plot_with_backend(backend, targets, db, relative, transitive)
+                self.plot_with_backend(backend, targets, db, relative, transitive, start_date)
             }
         }
     }
@@ -48,6 +49,7 @@ impl Plotter {
         db: &Db,
         relative: bool,
         transitive: bool,
+        start_date: Option<Date<Utc>>,
     ) -> Result<(), Error>
     where
         T: DrawingBackend,
@@ -65,6 +67,13 @@ impl Plotter {
             if let Some(entries) = db.map.get(target.as_ref()) {
                 for entry in entries {
                     let x_val = entry.time.date();
+
+                    if let Some(start) = start_date {
+                        if start > x_val {
+                            continue;
+                        }
+                    }
+
                     let dependents = if transitive {
                         entry.transitive_dependents
                     } else {

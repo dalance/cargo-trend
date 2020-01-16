@@ -68,9 +68,9 @@ pub enum Opt {
         #[structopt(long = "top")]
         top: Option<usize>,
 
-        /// Duration by week of the most trending crates
-        #[structopt(long = "duration", default_value = "4")]
-        duration: i64,
+        /// Duration by week
+        #[structopt(long = "duration")]
+        duration: Option<i64>,
     },
 }
 
@@ -177,14 +177,22 @@ fn run() -> Result<(), Error> {
 
     let db = Db::load(&db_path)?;
 
+    let start_date = if let Some(duration) = duration {
+        Some((Utc::now() - Duration::weeks(duration)).date())
+    } else {
+        None
+    };
+
     let targets = if let Some(top) = top {
-        let now = Utc::now();
         let mut trend = Vec::new();
         for (name, entries) in &db.map {
             let mut entry_oldest = None;
             for entry in entries {
-                let diff = now - entry.time;
-                if diff > Duration::weeks(duration) {
+                if let Some(start_date) = start_date {
+                    if entry.time.date() < start_date {
+                        entry_oldest = Some(entry.clone());
+                    }
+                } else {
                     entry_oldest = Some(entry.clone());
                 }
             }
@@ -251,7 +259,14 @@ fn run() -> Result<(), Error> {
     };
 
     let plotter = Plotter::new().size((x_size, y_size));
-    plotter.plot(output, targets.as_slice(), &db, relative, transitive)?;
+    plotter.plot(
+        output,
+        targets.as_slice(),
+        &db,
+        relative,
+        transitive,
+        start_date,
+    )?;
 
     Ok(())
 }
