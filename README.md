@@ -35,7 +35,10 @@ $ cargo trend --output trend.png
 ```
 
 If `--relative` option is given, the y-axis of the output becomes fraction of crates.io.
+
 If `--transitive` option is given, the way counting dependents changes from direct-dependencies to transitive-dependencies.
+
+If `--top` option is given, the most trending crates are shown.
 
 ## Samples
 
