@@ -169,7 +169,7 @@ dependencies = [
 
 [[package]]
 name = "cargo-trend"
-version = "0.2.3"
+version = "0.2.4-pre"
 dependencies = [
  "anyhow 1.0.26 (registry+https://github.com/rust-lang/crates.io-index)",
  "cargo_metadata 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
