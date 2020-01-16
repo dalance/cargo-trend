@@ -39,6 +39,15 @@ If `--transitive` option is given, the way counting dependents changes from dire
 
 ## Samples
 
+
+### The most trending crates
+
+```console
+$ cargo trend --relative --top 5
+```
+
+![top5.svg](./samples/top5.svg)
+
 ### Error management library
 
 ```console

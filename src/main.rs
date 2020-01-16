@@ -5,6 +5,7 @@ use crate::db::Db;
 use crate::plotter::Plotter;
 use anyhow::Error;
 use cargo_metadata::MetadataCommand;
+use chrono::{Duration, Utc};
 use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::io::{Read, Write};
@@ -56,12 +57,20 @@ pub enum Opt {
         branch: Option<String>,
 
         /// Plot fraction of crates.io
-        #[structopt(short = "r", long = "relative")]
+        #[structopt(long = "relative")]
         relative: bool,
 
         /// Plot transitive dependents
-        #[structopt(short = "t", long = "transitive")]
+        #[structopt(long = "transitive")]
         transitive: bool,
+
+        /// The most trending crates
+        #[structopt(long = "top")]
+        top: Option<usize>,
+
+        /// Duration by week of the most trending crates
+        #[structopt(long = "duration", default_value = "4")]
+        duration: i64,
     },
 }
 
@@ -88,30 +97,45 @@ fn main() {
 fn run() -> Result<(), Error> {
     let opt = Opt::from_args();
 
-    let (crates, x_size, y_size, output, manifest_path, update, branch, relative, transitive) =
-        match opt {
-            Opt::Trend {
-                crates,
-                x_size,
-                y_size,
-                output,
-                manifest_path,
-                update,
-                branch,
-                relative,
-                transitive,
-            } => (
-                crates,
-                x_size,
-                y_size,
-                output,
-                manifest_path,
-                update,
-                branch,
-                relative,
-                transitive,
-            ),
-        };
+    let (
+        crates,
+        x_size,
+        y_size,
+        output,
+        manifest_path,
+        update,
+        branch,
+        relative,
+        transitive,
+        top,
+        duration,
+    ) = match opt {
+        Opt::Trend {
+            crates,
+            x_size,
+            y_size,
+            output,
+            manifest_path,
+            update,
+            branch,
+            relative,
+            transitive,
+            top,
+            duration,
+        } => (
+            crates,
+            x_size,
+            y_size,
+            output,
+            manifest_path,
+            update,
+            branch,
+            relative,
+            transitive,
+            top,
+            duration,
+        ),
+    };
 
     if let Some(path) = update {
         let mut db = if path.exists() {
@@ -153,7 +177,56 @@ fn run() -> Result<(), Error> {
 
     let db = Db::load(&db_path)?;
 
-    let targets = if crates.len() == 0 {
+    let targets = if let Some(top) = top {
+        let now = Utc::now();
+        let mut trend = Vec::new();
+        for (name, entries) in &db.map {
+            let mut entry_oldest = None;
+            for entry in entries {
+                let diff = now - entry.time;
+                if diff > Duration::weeks(duration) {
+                    entry_oldest = Some(entry.clone());
+                }
+            }
+            let entry_newest = entries.last();
+
+            if let Some(entry_oldest) = entry_oldest {
+                if let Some(entry_newest) = entry_newest {
+                    let (dep_oldest, dep_newest) = if transitive {
+                        (
+                            entry_oldest.transitive_dependents,
+                            entry_newest.transitive_dependents,
+                        )
+                    } else {
+                        (
+                            entry_oldest.direct_dependents,
+                            entry_newest.direct_dependents,
+                        )
+                    };
+
+                    let (dep_oldest, dep_newest) = if relative {
+                        (
+                            (dep_oldest as f64 / entry_oldest.total_crates as f64 * 10000.0) as i64,
+                            (dep_newest as f64 / entry_newest.total_crates as f64 * 10000.0) as i64,
+                        )
+                    } else {
+                        (dep_oldest as i64, dep_newest as i64)
+                    };
+                    trend.push((dep_newest - dep_oldest, name));
+                }
+            }
+        }
+
+        trend.sort_by_key(|x| x.0);
+
+        let mut ret = Vec::new();
+        for _ in 0..top {
+            if let Some(c) = trend.pop() {
+                ret.push(c.1.clone());
+            }
+        }
+        ret
+    } else if crates.len() == 0 {
         let mut cmd = MetadataCommand::new();
         if let Some(path) = manifest_path {
             cmd.manifest_path(path);
