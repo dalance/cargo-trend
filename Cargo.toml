@@ -30,8 +30,7 @@ chrono         = {version = "0.4", features = ["serde"]}
 crates-index   = "0.13"
 flate2         = "1.0"
 git2           = "0.10"
-#plotters       = "0.2"
-plotters       = {path = "../plotters"}
+plotters       = "0.2"
 random_color   = "0.4"
 reqwest        = "0.9"
 serde          = {version = "1.0", features = ["derive"]}
