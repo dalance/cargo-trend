@@ -3,15 +3,15 @@ mod plotter;
 
 use crate::db::Db;
 use crate::plotter::Plotter;
-use anyhow::Error;
+use anyhow::{anyhow, Error};
 use cargo_metadata::MetadataCommand;
 use chrono::{Duration, Utc};
+use directories::ProjectDirs;
 use sha2::{Digest, Sha256};
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{Read, Write};
 use std::path::PathBuf;
 use structopt::{clap, StructOpt};
-use xdg::BaseDirectories;
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Opt
@@ -149,8 +149,10 @@ fn run() -> Result<(), Error> {
         return Ok(());
     }
 
-    let xdg_dirs = BaseDirectories::with_prefix("cargo-trend")?;
-    let db_path = xdg_dirs.place_data_file("db.gz")?;
+    let base_dir = ProjectDirs::from("org", "dalance", "cargo-trend").ok_or(anyhow!("aa"))?;
+    let data_dir = base_dir.data_dir();
+    fs::create_dir_all(data_dir)?;
+    let db_path = data_dir.join("db.gz");
 
     let latest_hash =
         reqwest::get("https://github.com/dalance/cargo-trend/raw/master/db_v2/db.gz.sha256")?
