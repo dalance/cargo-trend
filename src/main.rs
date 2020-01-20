@@ -3,7 +3,7 @@ mod plotter;
 
 use crate::db::Db;
 use crate::plotter::Plotter;
-use anyhow::{anyhow, Error};
+use anyhow::{anyhow, Context, Error};
 use cargo_metadata::MetadataCommand;
 use chrono::{Duration, Utc};
 use directories::ProjectDirs;
@@ -149,9 +149,15 @@ fn run() -> Result<(), Error> {
         return Ok(());
     }
 
-    let base_dir = ProjectDirs::from("org", "dalance", "cargo-trend").ok_or(anyhow!("aa"))?;
+    let base_dir = ProjectDirs::from("org", "dalance", "cargo-trend")
+        .ok_or(anyhow!("failed to find user directory"))?;
     let data_dir = base_dir.data_dir();
-    fs::create_dir_all(data_dir)?;
+    fs::create_dir_all(data_dir).with_context(|| {
+        format!(
+            "failed to create data direcotry {}",
+            data_dir.to_string_lossy()
+        )
+    })?;
     let db_path = data_dir.join("db.gz");
 
     let latest_hash =
