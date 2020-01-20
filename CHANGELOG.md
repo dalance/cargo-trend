@@ -1,6 +1,8 @@
 # Change Log
 
-## [Unreleased](https://github.com/dalance/cargo-trend/compare/v0.2.3...Unreleased) - ReleaseDate
+## [Unreleased](https://github.com/dalance/cargo-trend/compare/v0.2.4...Unreleased) - ReleaseDate
+
+## [v0.2.4](https://github.com/dalance/cargo-trend/compare/v0.2.3...v0.2.4) - 2020-01-21
 
 * [Fixed] build failure on Windows
 
