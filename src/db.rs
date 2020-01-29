@@ -111,7 +111,7 @@ impl Db {
                 for dep in c.latest_version().dependencies() {
                     let name = dep.name();
                     if let Some((cnt, _)) = deps.get_mut(name) {
-                        *cnt = *cnt + 1;
+                        *cnt += 1;
                     } else {
                         deps.insert(String::from(name), (1, 0));
                     }
@@ -122,7 +122,7 @@ impl Db {
 
                 for name in &transitive {
                     if let Some((_, cnt)) = deps.get_mut(name) {
-                        *cnt = *cnt + 1;
+                        *cnt += 1;
                     } else {
                         deps.insert(String::from(name), (0, 1));
                     }

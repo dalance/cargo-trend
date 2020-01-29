@@ -150,7 +150,7 @@ fn run() -> Result<(), Error> {
     }
 
     let base_dir = ProjectDirs::from("org", "dalance", "cargo-trend")
-        .ok_or(anyhow!("failed to find user directory"))?;
+        .ok_or_else(|| anyhow!("failed to find user directory"))?;
     let data_dir = base_dir.data_dir();
     fs::create_dir_all(data_dir).with_context(|| {
         format!(
@@ -198,10 +198,10 @@ fn run() -> Result<(), Error> {
             for entry in entries {
                 if let Some(start_date) = start_date {
                     if entry.time.date() < start_date {
-                        entry_oldest = Some(entry.clone());
+                        entry_oldest = Some(entry);
                     }
                 } else {
-                    entry_oldest = Some(entry.clone());
+                    entry_oldest = Some(entry);
                 }
             }
             let entry_newest = entries.last();
@@ -242,7 +242,7 @@ fn run() -> Result<(), Error> {
             }
         }
         ret
-    } else if crates.len() == 0 {
+    } else if crates.is_empty() {
         let mut cmd = MetadataCommand::new();
         if let Some(path) = manifest_path {
             cmd.manifest_path(path);
@@ -257,7 +257,7 @@ fn run() -> Result<(), Error> {
                 .any(|x| x.repr == package.id.repr)
             {
                 for dep in package.dependencies {
-                    ret.push(String::from(dep.name));
+                    ret.push(dep.name);
                 }
             }
         }
