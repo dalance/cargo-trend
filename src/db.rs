@@ -117,14 +117,29 @@ impl Db {
                     }
                 }
 
-                let trace = HashSet::new();
-                let transitive = gather_transitive(name, trace, &crates, &mut cache);
+                let mut trace = HashSet::new();
+                trace.insert(String::from(name));
+                let (transitive, looped) = gather_transitive(name, trace, &crates, &mut cache);
 
-                for name in &transitive {
-                    if let Some((_, cnt)) = deps.get_mut(name) {
+                // connect looped transitive
+                for l in &looped {
+                    let l_cached = cache.get(l).unwrap().clone();
+
+                    for t in &transitive {
+                        let t_cached = cache.get_mut(t).unwrap();
+                        if t_cached.contains(l) {
+                            for l in &l_cached {
+                                t_cached.insert(l.clone());
+                            }
+                        }
+                    }
+                }
+
+                for t in &transitive {
+                    if let Some((_, cnt)) = deps.get_mut(t) {
                         *cnt += 1;
                     } else {
-                        deps.insert(String::from(name), (0, 1));
+                        deps.insert(String::from(t), (0, 1));
                     }
                 }
             }
@@ -161,25 +176,33 @@ fn gather_transitive(
     trace: HashSet<String>,
     crates: &HashMap<String, Crate>,
     cache: &mut HashMap<String, HashSet<String>>,
-) -> HashSet<String> {
+) -> (HashSet<String>, HashSet<String>) {
     if let Some(cached) = cache.get(name) {
-        cached.clone()
+        (cached.clone(), HashSet::new())
     } else {
-        let mut ret = HashSet::new();
+        let mut ret_looped = HashSet::new();
+        let mut ret_transitive = HashSet::new();
         if let Some(c) = crates.get(name) {
             for dep in c.latest_version().dependencies() {
                 let name = dep.name();
-                ret.insert(String::from(name));
+                ret_transitive.insert(String::from(name));
                 if !trace.contains(name) {
                     let mut trace = trace.clone();
                     trace.insert(String::from(name));
-                    for c in gather_transitive(name, trace, crates, cache) {
-                        ret.insert(c.clone());
+
+                    let (transitive, looped) = gather_transitive(name, trace, crates, cache);
+                    for l in looped {
+                        ret_looped.insert(l.clone());
                     }
+                    for t in transitive {
+                        ret_transitive.insert(t.clone());
+                    }
+                } else {
+                    ret_looped.insert(String::from(name));
                 }
             }
         }
-        cache.insert(String::from(name), ret.clone());
-        ret
+        cache.insert(String::from(name), ret_transitive.clone());
+        (ret_transitive, ret_looped)
     }
 }

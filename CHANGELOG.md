@@ -2,6 +2,8 @@
 
 ## [Unreleased](https://github.com/dalance/cargo-trend/compare/v0.2.5...Unreleased) - ReleaseDate
 
+* [Fixed] wrong count of transitive
+
 ## [v0.2.5](https://github.com/dalance/cargo-trend/compare/v0.2.4...v0.2.5) - 2020-01-21
 
 ## [v0.2.4](https://github.com/dalance/cargo-trend/compare/v0.2.3...v0.2.4) - 2020-01-21
