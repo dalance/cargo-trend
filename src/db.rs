@@ -1,7 +1,7 @@
 use anyhow::Error;
 use chrono::serde::ts_seconds;
 use chrono::{DateTime, TimeZone, Utc};
-use crates_index::{Crate, Index};
+use crates_index::{Crate, Dependency, Index};
 use flate2::read::GzDecoder;
 use flate2::{Compression, GzBuilder};
 use git2::{BranchType, Repository, ResetType};
@@ -108,8 +108,10 @@ impl Db {
             let mut deps = HashMap::new();
             let mut cache = HashMap::new();
             for (name, c) in &crates {
-                for dep in c.latest_version().dependencies() {
-                    let name = dep.name();
+                let enabled_features = [String::from("default")];
+
+                for dep in gather_dependencies(c, &enabled_features) {
+                    let name = dep.crate_name();
                     if let Some((cnt, _)) = deps.get_mut(name) {
                         *cnt += 1;
                     } else {
@@ -119,7 +121,8 @@ impl Db {
 
                 let mut trace = HashSet::new();
                 trace.insert(String::from(name));
-                let (transitive, looped) = gather_transitive(name, trace, &crates, &mut cache);
+                let (transitive, looped) =
+                    gather_transitive(name, &enabled_features, trace, &crates, &mut cache);
 
                 // connect looped transitive
                 for l in &looped {
@@ -173,6 +176,7 @@ impl Db {
 
 fn gather_transitive(
     name: &str,
+    enabled_features: &[String],
     trace: HashSet<String>,
     crates: &HashMap<String, Crate>,
     cache: &mut HashMap<String, HashSet<String>>,
@@ -183,14 +187,21 @@ fn gather_transitive(
         let mut ret_looped = HashSet::new();
         let mut ret_transitive = HashSet::new();
         if let Some(c) = crates.get(name) {
-            for dep in c.latest_version().dependencies() {
-                let name = dep.name();
+            for dep in gather_dependencies(c, enabled_features) {
+                let name = dep.crate_name();
                 ret_transitive.insert(String::from(name));
                 if !trace.contains(name) {
                     let mut trace = trace.clone();
                     trace.insert(String::from(name));
 
-                    let (transitive, looped) = gather_transitive(name, trace, crates, cache);
+                    let mut dep_features: Vec<String> =
+                        dep.features().iter().map(|x| x.clone()).collect();
+                    if dep.has_default_features() {
+                        dep_features.push(String::from("default"));
+                    }
+
+                    let (transitive, looped) =
+                        gather_transitive(name, &dep_features, trace, crates, cache);
                     for l in looped {
                         ret_looped.insert(l.clone());
                     }
@@ -205,4 +216,46 @@ fn gather_transitive(
         cache.insert(String::from(name), ret_transitive.clone());
         (ret_transitive, ret_looped)
     }
+}
+
+fn gather_dependencies(krate: &Crate, enabled_features: &[String]) -> Vec<Dependency> {
+    let mut ret = Vec::new();
+    let krate = krate.latest_version();
+    let enabled_deps = gather_enabled_dependencies(krate.features(), enabled_features, 100);
+
+    for dep in krate.dependencies() {
+        if dep.is_optional() {
+            if enabled_deps.iter().any(|x| x == dep.crate_name()) {
+                ret.push(dep.clone());
+            }
+        } else {
+            ret.push(dep.clone());
+        }
+    }
+    ret
+}
+
+fn gather_enabled_dependencies(
+    features: &HashMap<String, Vec<String>>,
+    enabled_features: &[String],
+    max_depth: usize,
+) -> Vec<String> {
+    let mut ret = Vec::new();
+    for enabled in enabled_features {
+        if let Some(expanded) = features.get(enabled) {
+            for e in expanded {
+                let mut children = if max_depth == 0 {
+                    Vec::new()
+                } else {
+                    gather_enabled_dependencies(features, &vec![e.clone()], max_depth - 1)
+                };
+                if children.is_empty() {
+                    ret.push(e.clone());
+                } else {
+                    ret.append(&mut children);
+                }
+            }
+        }
+    }
+    ret
 }
