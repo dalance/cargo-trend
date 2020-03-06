@@ -5,6 +5,7 @@ use crates_index::{Crate, Dependency, Index};
 use flate2::read::GzDecoder;
 use flate2::{Compression, GzBuilder};
 use git2::{BranchType, Repository, ResetType};
+use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
@@ -110,7 +111,7 @@ impl Db {
             for (name, c) in &crates {
                 let enabled_features = [String::from("default")];
 
-                for dep in gather_dependencies(c, &enabled_features) {
+                for dep in gather_dependencies(c, &VersionReq::any(), &enabled_features) {
                     let name = dep.crate_name();
                     if let Some((cnt, _)) = deps.get_mut(name) {
                         *cnt += 1;
@@ -121,8 +122,14 @@ impl Db {
 
                 let mut trace = HashSet::new();
                 trace.insert(String::from(name));
-                let (transitive, looped) =
-                    gather_transitive(name, &enabled_features, trace, &crates, &mut cache);
+                let (transitive, looped) = gather_transitive(
+                    name,
+                    &VersionReq::any(),
+                    &enabled_features,
+                    trace,
+                    &crates,
+                    &mut cache,
+                );
 
                 // connect looped transitive
                 for l in &looped {
@@ -176,6 +183,7 @@ impl Db {
 
 fn gather_transitive(
     name: &str,
+    requirement: &VersionReq,
     enabled_features: &[String],
     trace: HashSet<String>,
     crates: &HashMap<String, Crate>,
@@ -187,21 +195,22 @@ fn gather_transitive(
         let mut ret_looped = HashSet::new();
         let mut ret_transitive = HashSet::new();
         if let Some(c) = crates.get(name) {
-            for dep in gather_dependencies(c, enabled_features) {
+            for dep in gather_dependencies(c, requirement, enabled_features) {
                 let name = dep.crate_name();
                 ret_transitive.insert(String::from(name));
                 if !trace.contains(name) {
                     let mut trace = trace.clone();
                     trace.insert(String::from(name));
 
-                    let mut dep_features: Vec<String> =
+                    let mut dep_features: Vec<_> =
                         dep.features().iter().map(|x| x.clone()).collect();
                     if dep.has_default_features() {
                         dep_features.push(String::from("default"));
                     }
 
+                    let requirement = VersionReq::parse(dep.requirement()).unwrap();
                     let (transitive, looped) =
-                        gather_transitive(name, &dep_features, trace, crates, cache);
+                        gather_transitive(name, &requirement, &dep_features, trace, crates, cache);
                     for l in looped {
                         ret_looped.insert(l.clone());
                     }
@@ -218,20 +227,35 @@ fn gather_transitive(
     }
 }
 
-fn gather_dependencies(krate: &Crate, enabled_features: &[String]) -> Vec<Dependency> {
-    let mut ret = Vec::new();
-    let krate = krate.latest_version();
-    let enabled_deps = gather_enabled_dependencies(krate.features(), enabled_features, 100);
+fn gather_dependencies(
+    krate: &Crate,
+    requirement: &VersionReq,
+    enabled_features: &[String],
+) -> Vec<Dependency> {
+    let krate = krate
+        .versions()
+        .iter()
+        .filter(|x| {
+            let version = Version::parse(x.version()).unwrap();
+            requirement.matches(&version)
+        })
+        .last();
 
-    for dep in krate.dependencies() {
-        if dep.is_optional() {
-            if enabled_deps.iter().any(|x| x == dep.crate_name()) {
+    let mut ret = Vec::new();
+    if let Some(krate) = krate {
+        let enabled_deps = gather_enabled_dependencies(krate.features(), enabled_features, 100);
+
+        for dep in krate.dependencies() {
+            if dep.is_optional() {
+                if enabled_deps.iter().any(|x| x == dep.crate_name()) {
+                    ret.push(dep.clone());
+                }
+            } else {
                 ret.push(dep.clone());
             }
-        } else {
-            ret.push(dep.clone());
         }
     }
+
     ret
 }
 

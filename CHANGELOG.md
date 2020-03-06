@@ -4,6 +4,7 @@
 
 * [Fixed] wrong count of transitive
 * [Fixed] feature trace at transitive count
+* [Fixed] semver trace at transitive count
 
 ## [v0.2.5](https://github.com/dalance/cargo-trend/compare/v0.2.4...v0.2.5) - 2020-01-21
 
