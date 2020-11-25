@@ -19,8 +19,8 @@ jobs:
         cargo run -- trend --relative --output samples/arg_relative.svg clap structopt docopt argparse getopts
         cargo run -- trend --output samples/term.svg ansi_term termcolor term termion colored console
         cargo run -- trend --relative --output samples/term_relative.svg ansi_term termcolor term termion colored console
-        cargo run -- trend --xsize 600 --ysize 400 --output samples/top5.svg --top 5 --duration 4
-        cargo run -- trend --xsize 600 --ysize 400 --relative --output samples/top5_relative.svg --top 5 --duration 4
+        cargo run -- trend --xsize 600 --ysize 400 --output samples/top5.svg --top_trend 5 --duration 4
+        cargo run -- trend --xsize 600 --ysize 400 --relative --output samples/top5_relative.svg --top_trend 5 --duration 4
 
     - name: Commit
       uses: EndBug/add-and-commit@v2.1.0

@@ -104,7 +104,7 @@ impl Plotter {
         let mut chart = ChartBuilder::on(&root)
             .x_label_area_size(50)
             .y_label_area_size(50)
-            .build_ranged(x_min..x_max, y_min..y_max)?;
+            .build_cartesian_2d(x_min..x_max, y_min..y_max)?;
 
         let y_desc = if relative {
             "Fraction of dependent crates"
@@ -139,6 +139,7 @@ impl Plotter {
 
         chart
             .configure_series_labels()
+            .position(SeriesLabelPosition::MiddleLeft)
             .background_style(&WHITE)
             .border_style(&BLACK)
             .draw()?;
