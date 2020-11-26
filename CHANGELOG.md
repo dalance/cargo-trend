@@ -2,6 +2,8 @@
 
 ## [Unreleased](https://github.com/dalance/cargo-trend/compare/v0.3.0...Unreleased) - ReleaseDate
 
+* [Fixed] InvalidVersionRequirement error at DB update
+
 ## [v0.3.0](https://github.com/dalance/cargo-trend/compare/v0.2.5...v0.3.0) - 2020-11-25
 
 * [Fixed] wrong count of transitive

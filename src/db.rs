@@ -208,7 +208,11 @@ fn gather_transitive(
                         dep_features.push(String::from("default"));
                     }
 
-                    let requirement = VersionReq::parse(dep.requirement()).unwrap();
+                    let requirement = match VersionReq::parse(dep.requirement()) {
+                        Ok(x) => x,
+                        Err(_) => continue,
+                    };
+
                     let (transitive, looped) =
                         gather_transitive(name, &requirement, &dep_features, trace, crates, cache);
                     for l in looped {
