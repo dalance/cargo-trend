@@ -13,14 +13,14 @@ jobs:
     - uses: actions/checkout@v1
     - name: Run
       run: |
-        cargo run -- trend --output samples/error.svg failure error-chain quick-error snafu err-derive anyhow thiserror
-        cargo run -- trend --relative --output samples/error_relative.svg failure error-chain quick-error snafu err-derive anyhow thiserror
-        cargo run -- trend --output samples/arg.svg clap structopt docopt argparse getopts
-        cargo run -- trend --relative --output samples/arg_relative.svg clap structopt docopt argparse getopts
-        cargo run -- trend --output samples/term.svg ansi_term termcolor term termion colored console
-        cargo run -- trend --relative --output samples/term_relative.svg ansi_term termcolor term termion colored console
-        cargo run -- trend --xsize 600 --ysize 400 --output samples/top5.svg --top-trend 5 --duration 4
-        cargo run -- trend --xsize 600 --ysize 400 --relative --output samples/top5_relative.svg --top-trend 5 --duration 4
+        cargo run --release -- trend --output samples/error.svg failure error-chain quick-error snafu err-derive anyhow thiserror
+        cargo run --release -- trend --relative --output samples/error_relative.svg failure error-chain quick-error snafu err-derive anyhow thiserror
+        cargo run --release -- trend --output samples/arg.svg clap structopt docopt argparse getopts
+        cargo run --release -- trend --relative --output samples/arg_relative.svg clap structopt docopt argparse getopts
+        cargo run --release -- trend --output samples/term.svg ansi_term termcolor term termion colored console
+        cargo run --release -- trend --relative --output samples/term_relative.svg ansi_term termcolor term termion colored console
+        cargo run --release -- trend --xsize 600 --ysize 400 --output samples/top5.svg --top-trend 5 --duration 4
+        cargo run --release -- trend --xsize 600 --ysize 400 --relative --output samples/top5_relative.svg --top-trend 5 --duration 4
 
     - name: Commit
       uses: EndBug/add-and-commit@v2.1.0

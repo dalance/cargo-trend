@@ -12,7 +12,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Run
-      run: cargo run -- trend --update db_v2/db.gz
+      run: cargo run --release -- trend --update db_v2/db.gz
 
     - name: Commit
       uses: EndBug/add-and-commit@v2.1.0

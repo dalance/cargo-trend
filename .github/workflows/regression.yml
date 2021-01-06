@@ -20,4 +20,4 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v1
     - name: Run tests
-      run: cargo run -- trend
+      run: cargo run --release -- trend

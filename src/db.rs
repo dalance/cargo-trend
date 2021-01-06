@@ -247,7 +247,12 @@ fn gather_dependencies(
 
     let mut ret = Vec::new();
     if let Some(krate) = krate {
-        let enabled_deps = gather_enabled_dependencies(krate.features(), enabled_features, 100);
+        let enabled_deps = gather_enabled_dependencies(
+            krate.features(),
+            enabled_features,
+            100,
+            &mut HashSet::new(),
+        );
 
         for dep in krate.dependencies() {
             if dep.is_optional() {
@@ -267,15 +272,22 @@ fn gather_enabled_dependencies(
     features: &HashMap<String, Vec<String>>,
     enabled_features: &[String],
     max_depth: usize,
+    checked: &mut HashSet<String>,
 ) -> Vec<String> {
     let mut ret = Vec::new();
     for enabled in enabled_features {
+        // break feature loop
+        if checked.contains(enabled) {
+            continue;
+        }
+        checked.insert(enabled.clone());
+
         if let Some(expanded) = features.get(enabled) {
             for e in expanded {
                 let mut children = if max_depth == 0 {
                     Vec::new()
                 } else {
-                    gather_enabled_dependencies(features, &vec![e.clone()], max_depth - 1)
+                    gather_enabled_dependencies(features, &vec![e.clone()], max_depth - 1, checked)
                 };
                 if children.is_empty() {
                     ret.push(e.clone());
