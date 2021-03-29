@@ -1437,9 +1437,9 @@ dependencies = [
 
 [[package]]
 name = "random_color"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2588301349c27649562f15cdbdd75f0589cf28b9563b7ce9817250d4a40345cd"
+checksum = "65245cbfff595839eabd844ac9ca6a0b3b000f03c6bf8e8fc81e26332bce4740"
 dependencies = [
  "rand 0.7.3",
 ]
