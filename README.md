@@ -99,6 +99,20 @@ $ cargo trend --relative ansi_term termcolor term termion colored console
 
 ![term_relative.svg](./samples/term_relative.svg)
 
+### Async runtime library
+
+```console
+$ cargo trend tokio smol async-std
+```
+
+![async.svg](./samples/async.svg)
+
+```console
+$ cargo trend --relative tokio smol async-std
+```
+
+![async_relative.svg](./samples/async_relative.svg)
+
 ## Database
 
 The database of dependent crates is `./db/db.gz`.
