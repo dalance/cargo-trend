@@ -111,7 +111,7 @@ impl Db {
             for (name, c) in &crates {
                 let enabled_features = [String::from("default")];
 
-                for dep in gather_dependencies(c, &VersionReq::any(), &enabled_features) {
+                for dep in gather_dependencies(c, &VersionReq::STAR, &enabled_features) {
                     let name = dep.crate_name();
                     if let Some((cnt, _)) = deps.get_mut(name) {
                         *cnt += 1;
@@ -124,7 +124,7 @@ impl Db {
                 trace.insert(String::from(name));
                 let (transitive, looped) = gather_transitive(
                     name,
-                    &VersionReq::any(),
+                    &VersionReq::STAR,
                     &enabled_features,
                     trace,
                     &crates,
