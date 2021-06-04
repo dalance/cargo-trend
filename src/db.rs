@@ -240,8 +240,11 @@ fn gather_dependencies(
         .versions()
         .iter()
         .filter(|x| {
-            let version = Version::parse(x.version()).unwrap();
-            requirement.matches(&version)
+            if let Ok(version) = Version::parse(x.version()) {
+                requirement.matches(&version)
+            } else {
+                false
+            }
         })
         .last();
 
