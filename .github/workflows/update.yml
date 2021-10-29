@@ -12,6 +12,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: hecrj/setup-rust-action@v1
+    - uses: Swatinem/rust-cache@v1
     - name: Run
       run: cargo run --release -- trend --update db_v2/db.gz
 
