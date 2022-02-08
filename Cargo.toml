@@ -33,7 +33,7 @@ flate2         = "1"
 git2           = "0.13"
 plotters       = "0.3"
 random_color   = "0.6.1"
-semver         = "1.0.4"
+semver         = "1.0.5"
 serde          = {version = "1", features = ["derive"]}
 serde_json     = "1"
 sha2           = "0.10"
