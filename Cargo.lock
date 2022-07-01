@@ -123,7 +123,7 @@ dependencies = [
  "plotters",
  "random_color",
  "reqwest",
- "semver 1.0.10",
+ "semver 1.0.11",
  "serde",
  "serde_json",
  "sha2",
@@ -139,7 +139,7 @@ checksum = "3abb7553d5b9b8421c6de7cb02606ff15e0c6eea7d8eadd75ef013fd636bec36"
 dependencies = [
  "camino",
  "cargo-platform",
- "semver 1.0.10",
+ "semver 1.0.11",
  "serde",
  "serde_json",
 ]
@@ -275,7 +275,7 @@ dependencies = [
  "hex",
  "home",
  "memchr",
- "semver 1.0.10",
+ "semver 1.0.11",
  "serde",
  "serde_derive",
  "serde_json",
@@ -1408,9 +1408,9 @@ dependencies = [
 
 [[package]]
 name = "semver"
-version = "1.0.10"
+version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a41d061efea015927ac527063765e73601444cdc344ba855bc7bd44578b25e1c"
+checksum = "3d92beeab217753479be2f74e54187a6aed4c125ff0703a866c3147a02f0c6dd"
 dependencies = [
  "serde",
 ]
