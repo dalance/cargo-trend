@@ -166,7 +166,7 @@ fn run() -> Result<(), Error> {
     let db = Db::load(&db_path)?;
 
     let start_date = if let Some(duration) = opt.duration {
-        Some((Utc::now() - Duration::weeks(duration)).date())
+        Some((Utc::now() - Duration::weeks(duration)).date_naive())
     } else {
         None
     };
@@ -177,7 +177,7 @@ fn run() -> Result<(), Error> {
             let mut entry_oldest = entries.first();
             for entry in entries {
                 if let Some(start_date) = start_date {
-                    if entry.time.date() < start_date {
+                    if entry.time.date_naive() < start_date {
                         entry_oldest = Some(entry);
                     }
                 }

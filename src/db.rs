@@ -32,7 +32,7 @@ pub struct Entry {
 impl Db {
     pub fn new() -> Db {
         Db {
-            update: Utc.timestamp(0, 0),
+            update: Utc.timestamp_opt(0, 0).unwrap(),
             map: HashMap::new(),
         }
     }
@@ -82,11 +82,11 @@ impl Db {
         let mut revs = Vec::new();
         let mut revwalk = repo.revwalk()?;
         revwalk.push_head()?;
-        let mut last = Utc.timestamp(0, 0);
+        let mut last = Utc.timestamp_opt(0, 0).unwrap();
         for oid in revwalk {
             let commit = repo.find_commit(oid?)?;
-            let time = Utc.timestamp(commit.time().seconds(), 0);
-            if last.date() != time.date() && time > self.update {
+            let time = Utc.timestamp_opt(commit.time().seconds(), 0).unwrap();
+            if last.date_naive() != time.date_naive() && time > self.update {
                 revs.push((time, commit.id()));
                 last = time;
             }

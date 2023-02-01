@@ -1,6 +1,6 @@
 use crate::db::Db;
 use anyhow::Error;
-use chrono::{Date, TimeZone, Utc};
+use chrono::{NaiveDate, TimeZone, Utc};
 use plotters::prelude::*;
 use std::collections::BTreeMap;
 use std::ffi::OsStr;
@@ -27,7 +27,7 @@ impl Plotter {
         db: &Db,
         relative: bool,
         transitive: bool,
-        start_date: Option<Date<Utc>>,
+        start_date: Option<NaiveDate>,
     ) -> Result<(), Error> {
         let extension = path.as_ref().extension();
         match extension {
@@ -49,15 +49,18 @@ impl Plotter {
         db: &Db,
         relative: bool,
         transitive: bool,
-        start_date: Option<Date<Utc>>,
+        start_date: Option<NaiveDate>,
     ) -> Result<(), Error>
     where
         T: DrawingBackend,
         T::ErrorType: 'static,
         U: AsRef<str>,
     {
-        let mut x_min = Utc.timestamp(std::i32::MAX as i64, 0).date();
-        let mut x_max = Utc.timestamp(0, 0).date();
+        let mut x_min = Utc
+            .timestamp_opt(std::i32::MAX as i64, 0)
+            .unwrap()
+            .date_naive();
+        let mut x_max = Utc.timestamp_opt(0, 0).unwrap().date_naive();
         let mut y_min = std::f32::MAX;
         let mut y_max = std::f32::MIN;
 
@@ -66,7 +69,7 @@ impl Plotter {
             let mut plot = Vec::new();
             if let Some(entries) = db.map.get(target.as_ref()) {
                 for entry in entries {
-                    let x_val = entry.time.date();
+                    let x_val = entry.time.date_naive();
 
                     if let Some(start) = start_date {
                         if start > x_val {
