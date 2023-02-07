@@ -289,9 +289,9 @@ dependencies = [
 
 [[package]]
 name = "crates-index"
-version = "0.19.3"
+version = "0.19.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "950189cd3f794bdfe3d29deb4df4948e2bcd68210d1d3d8e292d4b436de9d178"
+checksum = "b48096488235b0a11c0c0adc98f45fe01a04fd8ac0e97d73f8664528950efd05"
 dependencies = [
  "git2",
  "hex",
@@ -1853,9 +1853,9 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "0.6.0"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fb9d890e4dc9298b70f740f615f2e05b9db37dce531f6b24fb77ac993f9f217"
+checksum = "f7afcae9e3f0fe2c370fd4657108972cbb2fa9db1b9f84849cefd80741b01cb6"
 dependencies = [
  "serde",
  "serde_spanned",
@@ -1865,18 +1865,18 @@ dependencies = [
 
 [[package]]
 name = "toml_datetime"
-version = "0.5.1"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4553f467ac8e3d374bc9a177a26801e5d0f9b211aa1673fb137a403afd1c9cf5"
+checksum = "3ab8ed2edee10b50132aed5f331333428b011c99402b5a534154ed15746f9622"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "toml_edit"
-version = "0.18.1"
+version = "0.19.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56c59d8dd7d0dcbc6428bf7aa2f0e823e26e43b3c9aca15bbc9475d23e5fa12b"
+checksum = "5e6a7712b49e1775fb9a7b998de6635b299237f48b404dde71704f2e0e7f37e5"
 dependencies = [
  "indexmap",
  "nom8",
