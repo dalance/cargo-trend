@@ -27,7 +27,7 @@ pre-release-replacements    = [
 anyhow         = "1"
 cargo_metadata = "0.15"
 chrono         = {version = "0.4", features = ["serde"]}
-crates-index   = "0.19.2"
+crates-index   = "0.19.6"
 directories    = "4.0.1"
 flate2         = "1"
 git2           = "0.16"
@@ -38,7 +38,7 @@ serde          = {version = "1", features = ["derive"]}
 serde_json     = "1"
 sha2           = "0.10"
 structopt      = "0.3"
-tempfile       = "3.3"
+tempfile       = "3.4"
 
 [dependencies.reqwest]
 version  = "0.11"
