@@ -28,7 +28,7 @@ anyhow         = "1"
 cargo_metadata = "0.15"
 chrono         = {version = "0.4", features = ["serde"]}
 crates-index   = "0.19.7"
-directories    = "4.0.1"
+directories    = "5.0.0"
 flate2         = "1"
 git2           = "0.16"
 plotters       = "0.3"
