@@ -30,7 +30,7 @@ chrono         = {version = "0.4", features = ["serde"]}
 crates-index   = "0.19.10"
 directories    = "5.0.1"
 flate2         = "1"
-git2           = "0.16"
+git2           = "0.17"
 plotters       = "0.3"
 random_color   = "0.6.1"
 semver         = "1.0.17"
