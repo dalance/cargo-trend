@@ -1,6 +1,8 @@
 # Change Log
 
-## [Unreleased](https://github.com/dalance/cargo-trend/compare/v0.3.0...Unreleased) - ReleaseDate
+## [Unreleased](https://github.com/dalance/cargo-trend/compare/v0.4.0...Unreleased) - ReleaseDate
+
+## [v0.4.0](https://github.com/dalance/cargo-trend/compare/v0.3.0...v0.4.0) - 2023-05-18
 
 * [Fixed] panic at invalid semver
 * [Fixed] feature loop at DB update

@@ -125,7 +125,7 @@ dependencies = [
 
 [[package]]
 name = "cargo-trend"
-version = "0.3.1-pre"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "cargo_metadata",
