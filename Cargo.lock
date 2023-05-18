@@ -425,9 +425,9 @@ dependencies = [
 
 [[package]]
 name = "dlhn"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3423a53cf2e7f02238b1232ed69d2e053e88c616b4a88908f2fcc2e13912e6e3"
+checksum = "f51be9452a9ca93ab3f343806e0baa06406bcd7b34fad16dde5c6f39a6f72e2e"
 dependencies = [
  "bigdecimal",
  "dlhn_derive",
