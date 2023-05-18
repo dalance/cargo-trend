@@ -2,8 +2,7 @@ use anyhow::Error;
 use chrono::serde::ts_seconds;
 use chrono::{DateTime, TimeZone, Utc};
 use crates_index::{Crate, Dependency, Index};
-use flate2::read::GzDecoder;
-use flate2::{Compression, GzBuilder};
+use dlhn::{Deserializer, Serializer};
 use git2::{BranchType, Repository, ResetType};
 use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
@@ -21,6 +20,17 @@ pub struct Db {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct DbHeader {
+    pub update: DateTime<Utc>,
+    pub hash: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct DbChunk {
+    pub data: Vec<(String, Entry)>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Entry {
     #[serde(with = "ts_seconds")]
     pub time: DateTime<Utc>,
@@ -37,30 +47,75 @@ impl Db {
         }
     }
 
-    pub fn load<T: AsRef<Path>>(path: T) -> Result<Db, Error> {
-        let file = File::open(path)?;
-        let mut gz = GzDecoder::new(file);
-        let mut buf = Vec::new();
-        gz.read_to_end(&mut buf)?;
-        let db = serde_json::from_str(&String::from_utf8(buf)?)?;
-        Ok(db)
-    }
-
-    pub fn save<T: AsRef<Path>>(&self, path: T) -> Result<(), Error> {
-        let encoded: Vec<u8> = serde_json::to_string(self)?.into_bytes();
-        let file = File::create(&path)?;
-        let mut gz = GzBuilder::new().write(file, Compression::default());
-        gz.write_all(&encoded)?;
-        gz.finish()?;
-
+    pub fn load<T: AsRef<Path>>(dir: T) -> Result<Db, Error> {
+        let path = dir.as_ref().join("db.json");
         let mut file = File::open(&path)?;
         let mut buf = Vec::new();
         file.read_to_end(&mut buf)?;
+        let header: DbHeader = serde_json::from_str(&String::from_utf8(buf)?)?;
 
-        let hash = Sha256::digest(&buf);
-        let path = path.as_ref().with_extension("gz.sha256");
+        let mut db = Db {
+            update: header.update,
+            map: HashMap::new(),
+        };
+
+        for i in 0..header.hash.len() {
+            let path = dir.as_ref().join(format!("db{}", i));
+            let mut file = File::open(path)?;
+            let mut buf = Vec::new();
+            file.read_to_end(&mut buf)?;
+            let mut buf = buf.as_slice();
+            let mut deserializer = Deserializer::new(&mut buf);
+            let chunk = DbChunk::deserialize(&mut deserializer)?;
+
+            for (name, entry) in chunk.data {
+                db.map
+                    .entry(name)
+                    .and_modify(|e| e.push(entry.clone()))
+                    .or_insert(vec![entry]);
+            }
+        }
+
+        Ok(db)
+    }
+
+    pub fn save<T: AsRef<Path>>(&self, dir: T) -> Result<(), Error> {
+        let mut map: Vec<_> = self.map.iter().collect();
+        map.sort_by_key(|x| x.0);
+
+        let mut data = Vec::new();
+        for (k, v) in map {
+            for e in v {
+                data.push((k.to_owned(), e.to_owned()));
+            }
+        }
+        data.sort_by_key(|x| x.1.time);
+
+        let mut hashes = Vec::new();
+        let mut i = 0;
+        while data.len() > 1000000 {
+            let rest = data.split_off(1000000);
+
+            let path = dir.as_ref().join(format!("db{}", i));
+            let hash = write_chunk(&path, data.clone())?;
+            hashes.push(hash);
+
+            data = rest;
+            i += 1;
+        }
+
+        let path = dir.as_ref().join(format!("db{}", i));
+        let hash = write_chunk(&path, data.clone())?;
+        hashes.push(hash);
+
+        let header = DbHeader {
+            update: self.update.to_owned(),
+            hash: hashes,
+        };
+        let encoded: Vec<u8> = serde_json::to_string(&header)?.into_bytes();
+        let path = dir.as_ref().join("db.json");
         let mut file = File::create(path)?;
-        file.write_all(&format!("{:x}", hash).as_bytes())?;
+        file.write_all(&encoded)?;
         file.flush()?;
 
         Ok(())
@@ -179,6 +234,65 @@ impl Db {
 
         Ok(())
     }
+
+    pub fn fetch<T: AsRef<Path>>(dir: T) -> Result<(), Error> {
+        let latest_header = reqwest::blocking::get(
+            "https://raw.githubusercontent.com/dalance/cargo-trend/master/db_v3/db.json",
+        )?
+        .text()?;
+
+        let header: DbHeader = serde_json::from_str(&latest_header)?;
+        let path = dir.as_ref().join("db.json");
+        let mut file = File::create(path)?;
+        file.write_all(latest_header.as_bytes())?;
+        file.flush()?;
+
+        for (i, h) in header.hash.iter().enumerate() {
+            let path = dir.as_ref().join(format!("db{}", i));
+            let fetch = if path.exists() {
+                let path = dir.as_ref().join(format!("db{}", i));
+                let mut file = File::open(&path)?;
+                let mut buf = Vec::new();
+                file.read_to_end(&mut buf)?;
+                let hash = format!("{:x}", Sha256::digest(&buf));
+                &hash != h
+            } else {
+                true
+            };
+
+            if fetch {
+                let mut res = reqwest::blocking::get(format!(
+                    "https://github.com/dalance/cargo-trend/raw/master/db_v3/db{}",
+                    i
+                ))?;
+                let mut buf = Vec::new();
+                res.read_to_end(&mut buf)?;
+                let path = dir.as_ref().join(format!("db{}", i));
+                let mut file = File::create(&path)?;
+                file.write_all(&buf)?;
+                file.flush()?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+fn write_chunk(path: &Path, data: Vec<(String, Entry)>) -> Result<String, Error> {
+    let chunk = DbChunk { data };
+
+    let mut encoded = Vec::new();
+    let mut serializer = Serializer::new(&mut encoded);
+    chunk.serialize(&mut serializer)?;
+    let mut file = File::create(&path)?;
+    file.write_all(&encoded)?;
+    file.flush()?;
+
+    let mut file = File::open(&path)?;
+    let mut buf = Vec::new();
+    file.read_to_end(&mut buf)?;
+    let hash = Sha256::digest(&buf);
+    Ok(format!("{:x}", hash))
 }
 
 fn gather_transitive(

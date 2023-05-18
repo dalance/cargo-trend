@@ -7,9 +7,7 @@ use anyhow::{anyhow, Context, Error};
 use cargo_metadata::MetadataCommand;
 use chrono::{Duration, Utc};
 use directories::ProjectDirs;
-use sha2::{Digest, Sha256};
-use std::fs::{self, File};
-use std::io::{Read, Write};
+use std::fs;
 use std::path::PathBuf;
 use structopt::{clap, StructOpt};
 
@@ -136,34 +134,9 @@ fn run() -> Result<(), Error> {
             data_dir.to_string_lossy()
         )
     })?;
-    let db_path = data_dir.join("db.gz");
 
-    let latest_hash = reqwest::blocking::get(
-        "https://github.com/dalance/cargo-trend/raw/master/db_v2/db.gz.sha256",
-    )?
-    .text()?;
-
-    let current_hash = if db_path.exists() {
-        let mut file = File::open(&db_path)?;
-        let mut buf = Vec::new();
-        file.read_to_end(&mut buf)?;
-        format!("{:x}", Sha256::digest(&buf))
-    } else {
-        String::from("")
-    };
-
-    if latest_hash != current_hash {
-        let mut res = reqwest::blocking::get(
-            "https://github.com/dalance/cargo-trend/raw/master/db_v2/db.gz",
-        )?;
-        let mut buf = Vec::new();
-        res.read_to_end(&mut buf)?;
-        let mut file = File::create(&db_path)?;
-        file.write_all(&buf)?;
-        file.flush()?;
-    }
-
-    let db = Db::load(&db_path)?;
+    Db::fetch(data_dir)?;
+    let db = Db::load(&data_dir)?;
 
     let start_date = if let Some(duration) = opt.duration {
         Some((Utc::now() - Duration::weeks(duration)).date_naive())
