@@ -14,14 +14,14 @@ jobs:
     - uses: hecrj/setup-rust-action@v1
     - uses: Swatinem/rust-cache@v1
     - name: Run
-      run: cargo run --release -- trend --update db_v2/db.gz
+      run: cargo run --release -- trend --update db_v3
 
     - name: Commit
       uses: EndBug/add-and-commit@v7
       with:
         default_author: github_actions
         message: "Update db"
-        add: "./db_v2/db*"
+        add: "./db_v3/db*"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
