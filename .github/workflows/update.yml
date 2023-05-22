@@ -25,5 +25,4 @@ jobs:
         add: "./db_v3/db*"
         fetch: false
       env:
-        GITHUB_TOKEN: ${{ secrets.PAT }}
-
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
