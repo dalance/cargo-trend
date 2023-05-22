@@ -25,13 +25,12 @@ jobs:
         cargo run --release -- trend --xsize 600 --ysize 400 --relative --output samples/top5_relative.svg --top-trend 5 --duration 4
 
     - name: Commit
-      uses: EndBug/add-and-commit@v2.1.0
+      uses: EndBug/add-and-commit@v9
       with:
-        author_name: dalance
-        author_email: dalance@gmail.com
+        default_author: github_actions
         message: "Update samples"
-        path: "./samples"
-        pattern: "*.svg"
+        add: "./samples/*.svg"
+        fetch: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
