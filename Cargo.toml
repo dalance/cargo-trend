@@ -31,7 +31,7 @@ directories    = "5.0.1"
 dlhn           = "0.1"
 git2           = "0.17"
 plotters       = "0.3"
-random_color   = "0.8.0"
+random_color   = "1.0.0"
 semver         = "1.0.23"
 serde          = {version = "1", features = ["derive"]}
 serde_json     = "1"
