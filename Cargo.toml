@@ -29,7 +29,7 @@ chrono         = {version = "0.4", features = ["serde"]}
 crates-index   = {version = "3.3", features = ["git"]}
 directories    = "5.0.1"
 dlhn           = "0.1"
-git2           = "0.17"
+git2           = "0.19"
 plotters       = "0.3"
 random_color   = "1.0.0"
 semver         = "1.0.23"
