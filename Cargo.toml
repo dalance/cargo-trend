@@ -24,9 +24,9 @@ pre-release-replacements    = [
 
 [dependencies]
 anyhow         = "1"
-cargo_metadata = "0.18"
+cargo_metadata = "0.19"
 chrono         = {version = "0.4", features = ["serde"]}
-crates-index   = "1.0.0"
+crates-index   = {version = "3.3", features = ["git"]}
 directories    = "5.0.1"
 dlhn           = "0.1"
 git2           = "0.17"

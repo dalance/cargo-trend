@@ -1,7 +1,7 @@
 use anyhow::Error;
 use chrono::serde::ts_seconds;
 use chrono::{DateTime, TimeZone, Utc};
-use crates_index::{Crate, Dependency, Index};
+use crates_index::{Crate, Dependency, GitIndex};
 use dlhn::{Deserializer, Serializer};
 use git2::{BranchType, Repository, ResetType};
 use semver::{Version, VersionReq};
@@ -155,7 +155,7 @@ impl Db {
             let obj = repo.find_object(id.clone(), None)?;
             repo.reset(&obj, ResetType::Hard, None)?;
 
-            let index = Index::with_path(&dir.path(), crates_index::INDEX_GIT_URL)?;
+            let index = GitIndex::with_path(&dir.path(), crates_index::git::URL)?;
             let mut crates = HashMap::new();
             for c in index.crates() {
                 crates.insert(String::from(c.name()), c);
