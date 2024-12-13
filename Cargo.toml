@@ -32,7 +32,7 @@ dlhn           = "0.1"
 git2           = "0.19"
 plotters       = "0.3"
 random_color   = "1.0.0"
-semver         = "1.0.23"
+semver         = "1.0.24"
 serde          = {version = "1", features = ["derive"]}
 serde_json     = "1"
 sha2           = "0.10"
