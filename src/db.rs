@@ -161,55 +161,65 @@ impl Db {
                 crates.insert(String::from(c.name()), c);
             }
 
-            let mut deps = HashMap::new();
-            let mut cache = HashMap::new();
-            for (name, c) in &crates {
+            let n = crates.len();
+            let mut names: Vec<String> = crates.keys().cloned().collect();
+            names.sort();
+            let id_of: HashMap<&str, u32> = names
+                .iter()
+                .enumerate()
+                .map(|(i, n)| (n.as_str(), i as u32))
+                .collect();
+            let crates_by_id: Vec<&Crate> =
+                names.iter().map(|nm| &crates[nm.as_str()]).collect();
+
+            let mut deps: HashMap<String, (u64, u64)> = HashMap::new();
+            let mut cache: Vec<Option<HashSet<u32>>> = vec![None; n];
+            for root_id in 0..n as u32 {
+                let c = crates_by_id[root_id as usize];
                 let enabled_features = [String::from("default")];
 
                 for dep in gather_dependencies(c, &VersionReq::STAR, &enabled_features) {
-                    let name = dep.crate_name();
-                    if let Some((cnt, _)) = deps.get_mut(name) {
-                        *cnt += 1;
-                    } else {
-                        deps.insert(String::from(name), (1, 0));
-                    }
+                    let dn = dep.crate_name();
+                    deps.entry(String::from(dn)).or_insert((0, 0)).0 += 1;
                 }
 
-                let mut trace = HashSet::new();
-                trace.insert(String::from(name));
+                let mut trace = HashSet::<u32>::new();
+                trace.insert(root_id);
                 let (transitive, looped) = gather_transitive(
-                    name,
+                    root_id,
                     &VersionReq::STAR,
                     &enabled_features,
-                    trace,
-                    &crates,
+                    &mut trace,
+                    &crates_by_id,
+                    &id_of,
                     &mut cache,
                 );
 
                 // connect looped transitive
-                for l in &looped {
-                    let l_cached = cache.get(l).unwrap().clone();
-
-                    for t in &transitive {
-                        let t_cached = cache.get_mut(t).unwrap();
-                        if t_cached.contains(l) {
-                            for l in &l_cached {
-                                t_cached.insert(l.clone());
+                for &l in &looped {
+                    let l_cached = match &cache[l as usize] {
+                        Some(s) => s.clone(),
+                        None => continue,
+                    };
+                    for &t in &transitive {
+                        if let Some(t_cached) = cache[t as usize].as_mut() {
+                            if t_cached.contains(&l) {
+                                for &x in &l_cached {
+                                    t_cached.insert(x);
+                                }
                             }
                         }
                     }
                 }
 
-                for t in &transitive {
-                    if let Some((_, cnt)) = deps.get_mut(t) {
-                        *cnt += 1;
-                    } else {
-                        deps.insert(String::from(t), (0, 1));
-                    }
+                for &t in &transitive {
+                    deps.entry(names[t as usize].clone())
+                        .or_insert((0, 0))
+                        .1 += 1;
                 }
             }
 
-            let total_crates = index.crates().count() as u64;
+            let total_crates = n as u64;
             for (name, (direct, transitive)) in &deps {
                 let entry = Entry {
                     time: *time,
@@ -296,53 +306,61 @@ fn write_chunk(path: &Path, data: Vec<(String, Entry)>) -> Result<String, Error>
 }
 
 fn gather_transitive(
-    name: &str,
+    id: u32,
     requirement: &VersionReq,
     enabled_features: &[String],
-    trace: HashSet<String>,
-    crates: &HashMap<String, Crate>,
-    cache: &mut HashMap<String, HashSet<String>>,
-) -> (HashSet<String>, HashSet<String>) {
-    if let Some(cached) = cache.get(name) {
-        (cached.clone(), HashSet::new())
-    } else {
-        let mut ret_looped = HashSet::new();
-        let mut ret_transitive = HashSet::new();
-        if let Some(c) = crates.get(name) {
-            for dep in gather_dependencies(c, requirement, enabled_features) {
-                let name = dep.crate_name();
-                ret_transitive.insert(String::from(name));
-                if !trace.contains(name) {
-                    let mut trace = trace.clone();
-                    trace.insert(String::from(name));
-
-                    let mut dep_features: Vec<_> =
-                        dep.features().iter().map(|x| x.clone()).collect();
-                    if dep.has_default_features() {
-                        dep_features.push(String::from("default"));
-                    }
-
-                    let requirement = match VersionReq::parse(dep.requirement()) {
-                        Ok(x) => x,
-                        Err(_) => continue,
-                    };
-
-                    let (transitive, looped) =
-                        gather_transitive(name, &requirement, &dep_features, trace, crates, cache);
-                    for l in looped {
-                        ret_looped.insert(l.clone());
-                    }
-                    for t in transitive {
-                        ret_transitive.insert(t.clone());
-                    }
-                } else {
-                    ret_looped.insert(String::from(name));
-                }
-            }
-        }
-        cache.insert(String::from(name), ret_transitive.clone());
-        (ret_transitive, ret_looped)
+    trace: &mut HashSet<u32>,
+    crates_by_id: &[&Crate],
+    id_of: &HashMap<&str, u32>,
+    cache: &mut [Option<HashSet<u32>>],
+) -> (HashSet<u32>, HashSet<u32>) {
+    if let Some(cached) = &cache[id as usize] {
+        return (cached.clone(), HashSet::new());
     }
+    let mut ret_looped = HashSet::new();
+    let mut ret_transitive = HashSet::new();
+    let c = crates_by_id[id as usize];
+    for dep in gather_dependencies(c, requirement, enabled_features) {
+        let dep_id = match id_of.get(dep.crate_name()) {
+            Some(&i) => i,
+            None => continue,
+        };
+        ret_transitive.insert(dep_id);
+        if !trace.contains(&dep_id) {
+            let mut dep_features: Vec<_> = dep.features().iter().cloned().collect();
+            if dep.has_default_features() {
+                dep_features.push(String::from("default"));
+            }
+
+            let requirement = match VersionReq::parse(dep.requirement()) {
+                Ok(x) => x,
+                Err(_) => continue,
+            };
+
+            trace.insert(dep_id);
+            let (transitive, looped) = gather_transitive(
+                dep_id,
+                &requirement,
+                &dep_features,
+                trace,
+                crates_by_id,
+                id_of,
+                cache,
+            );
+            trace.remove(&dep_id);
+
+            for l in looped {
+                ret_looped.insert(l);
+            }
+            for t in transitive {
+                ret_transitive.insert(t);
+            }
+        } else {
+            ret_looped.insert(dep_id);
+        }
+    }
+    cache[id as usize] = Some(ret_transitive.clone());
+    (ret_transitive, ret_looped)
 }
 
 fn gather_dependencies(
