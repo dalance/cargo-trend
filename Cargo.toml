@@ -26,16 +26,16 @@ pre-release-replacements    = [
 anyhow         = "1"
 cargo_metadata = "0.23"
 chrono         = {version = "0.4", features = ["serde"]}
-crates-index   = {version = "3.14", features = ["git"]}
+crates-index   = {version = "4.0", features = ["git"]}
 directories    = "6.0.0"
 dlhn           = "0.1"
-git2           = "0.21"
+git2           = {version = "0.21", features = ["https"]}
 plotters       = "0.3"
 random_color   = "1.1.0"
 semver         = "1.0.28"
 serde          = {version = "1", features = ["derive"]}
 serde_json     = "1"
-sha2           = "0.10"
+sha2           = "0.11"
 structopt      = "0.3"
 tempfile       = "3.27"
 

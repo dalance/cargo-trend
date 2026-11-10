@@ -264,7 +264,7 @@ impl Db {
                 let mut file = File::open(&path)?;
                 let mut buf = Vec::new();
                 file.read_to_end(&mut buf)?;
-                let hash = format!("{:x}", Sha256::digest(&buf));
+                let hash = sha256_hex(&buf);
                 &hash != h
             } else {
                 true
@@ -301,8 +301,14 @@ fn write_chunk(path: &Path, data: Vec<(String, Entry)>) -> Result<String, Error>
     let mut file = File::open(&path)?;
     let mut buf = Vec::new();
     file.read_to_end(&mut buf)?;
-    let hash = Sha256::digest(&buf);
-    Ok(format!("{:x}", hash))
+    Ok(sha256_hex(&buf))
+}
+
+fn sha256_hex(data: &[u8]) -> String {
+    Sha256::digest(data)
+        .iter()
+        .map(|b| format!("{:02x}", b))
+        .collect()
 }
 
 fn gather_transitive(
